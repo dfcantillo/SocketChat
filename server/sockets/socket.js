@@ -24,19 +24,24 @@ io.on('connection', (client) => {
         //Enviar mensaje a una sola especifica
         // client.broadcast.to(usuario.sala).emit('listaPersonas', usuarios.getPersonas());
         client.broadcast.to(data.sala).emit('listaPersonas', usuarios.getPersonasPorSala(data.sala));
-        console.log("Sala: ", data.sala);
+        client.broadcast.to(data.sala).emit("crearMensaje", crearMensaje('Administrador', `${data.nombre} se ha unido del chat`));
+
+        // console.log("Sala: ", data.sala);
         callback(usuarios.getPersonasPorSala(data.sala));
     });
 
-    client.on('crearMensaje', (data) => {
+    client.on('crearMensaje', (data, callback) => {
         let persona = usuarios.getPersona(client.id);
         let mensaje = crearMensaje(persona.nombre, data.mensaje);
-        client.broadcast.to(data.sala).emit('crearMensaje', mensaje);
+        client.broadcast.to(persona.sala).emit('crearMensaje', mensaje);
+        callback(mensaje);
+        // client.broadcast.emit('crearMensaje', mensaje);
     });
 
     client.on('disconnect', () => {
         let personaBorrada = usuarios.eliminarPersona(client.id);
-        if (personaBorrada.nombre) {
+        console.log(personaBorrada + " id:" + client.id);
+        if (personaBorrada) {
             client.broadcast.to(personaBorrada.sala).emit("crearMensaje", crearMensaje('Administrador', `${personaBorrada.nombre} se ha desconectado del chat`));
             client.broadcast.to(personaBorrada.sala).emit('listaPersonas', usuarios.getPersonasPorSala(personaBorrada.sala));
         }
